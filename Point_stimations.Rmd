@@ -1,0 +1,49 @@
+---
+title: "point_stimation"
+author: "Guillem"
+date: "30 de enero de 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## ESTIMACIÓN PUNTUAL EN R
+
+```{r}
+library(MASS) # UTILIZAREMO EL PAQUETE MASS
+```
+
+Si fitdistr no dispone de una fórmula cerrada para el estimador máximo verosímil de algún parámetro, usa un algoritmo numérico para aproximarlo que requiere de un valor inicial del algoritmo numérico para caluclar el estimador.
+
+```{r}
+muestra_poisson <- rpois(50, lambda = 5)
+muestra_poisson
+
+fitdistr(muestra_poisson, densfun="poisson")
+```
+La función fitdistr nos ha devuelto el valor de $\lambda$ (en este caso 4,76) valor que se aproxima al valor real que hemos pasado (en esta caso 5) con un error estándar de 0,329845
+
+```{r}
+(estimación_lambda = mean(muestra_poisson)) # buscamos lambda
+
+(estimación_error_típico = sqrt(estimación_lambda/50)) # buscamos el error típico
+```
+
+Si queremos calcularlo a mano, podemos. El estimador máximo verosímil de $\lambda$ en un poison es la $\overline{X}$, con un error típico de $\frac{\sqrt{\lambda}}{{\sqrt{n}}}$
+
+## ¿Qué pasaría si pensaramos que es una normal?
+
+```{r}
+fitdistr(muestra_poisson, densfun= "normal")
+```
+Los valores de la media muestral $\overline{X}$ y el error estándar de la poisson coinciden con la $\mu$ y su error estándar.
+
+Si observamos la desviación típica "verdadera" de la muestra de poisson:
+
+```{r}
+sd(muestra_poisson)*sqrt(49/50)
+```
+Como vemos $\sigma$ coincide con la desviación típica de la muestra de poisson. Relacionado con el Teorema Central del Límite
+

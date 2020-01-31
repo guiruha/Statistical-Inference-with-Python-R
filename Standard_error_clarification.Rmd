@@ -1,0 +1,62 @@
+---
+title: "Stimations"
+author: "Guillem"
+date: "29 de enero de 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Medias muestrales**
+
+```{r}
+medias_petal <- replicate(100000,mean(sample(iris$Petal.Length, 40, replace = TRUE)))
+
+head(medias_petal, 10)
+
+mean(medias_petal) 
+mean(iris$Petal.Length)
+
+# Valor medio de las medias anteriores se debe acercar al valor esperado E(X)
+
+
+sd(medias_petal) 
+sd(iris$Petal.Length) / sqrt(40)
+
+# El error estándar de las medias anteriores deberia acercarse a la desviación de la población divido por raíz de n
+
+hist(medias_petal)
+```
+
+**Calcular el error estándar de la media aritmética**
+
+```{r}
+x = c(-4, -3, -2, -1, 0, 1, 2, 3, 4)
+
+sum(x)
+
+length(x)
+
+sum(x)/length(x)
+
+mean(x)
+
+sd(x) # desviación tipica de la muestra
+
+var(x)
+
+sd(x) ^ 2
+
+sd(x) / sqrt(length(x)) # ESTO ES EL ERROR ESTÁNDAR NO SD
+
+sqrt(var(x)) / sqrt(length(x))
+
+var_real <- sum(x^2)/length(x) - mean(x)^2
+n <- length(x)
+var_muestral <- n/(n-1)*var_real
+
+
+```
+

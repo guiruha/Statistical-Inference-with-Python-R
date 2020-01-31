@@ -1,0 +1,86 @@
+---
+title: "Sampling_methods"
+author: "Guillem"
+date: "29 de enero de 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Métodos de muestreo
+\n
+**muestreo aleatorio con reposición (M.A.S)**
+\n
+```{r}
+sample(1:100, 15, replace = TRUE)
+
+flores_escogidas_con <- sample(1:150, 10, replace=TRUE)
+
+muestra_id <- iris[flores_escogidas_con,]
+
+muestra_id # Hemos hecho un m.a.s con el dst iris
+
+```
+\n
+**muestreo aleatorio sin reposición** 
+\n
+```{r}
+sample(1:100, 15, replace=FALSE)
+
+flores_escogidas_sin <- sample(1:150,10,replace=FALSE)
+
+muestra_iris_sin <- iris[flores_escogidas_sin,]
+
+muestra_iris_sin
+```
+
+**muestreo sistemático**
+\n
+```{r}
+(primera_flor <- sample(1:150, 1))
+
+incremento = floor(150/10) # elegiremos de 15 en 15
+
+flores_escogidas_sis <- seq(from=primera_flor, by=incremento, length.out = 10)
+
+flores_escogidas_sis <- flores_escogidas_sin%%150
+
+muestra_iris_sis <- iris[flores_escogidas_sis,]
+
+muestra_iris_sis
+```
+
+**muestreo aleatorio estratificado**
+
+```{r}
+muestra_setosa <- sample(1:50, 4, replace=TRUE)
+muestra_versicolor <- sample(51:100, 4, replace=TRUE)
+muestra_virginica <- sample(101:150,4, replace=TRUE)
+
+muestra_iris_str <- rbind(iris[muestra_setosa,], iris[muestra_versicolor,], iris[muestra_virginica,])
+
+muestra_iris_str
+```
+
+**muestreo por clúster**
+
+```{r}
+ind_especie_escogida <- sample(1:3,1,replace=FALSE)
+
+especie_escogida <- unique(iris$Species)[ind_especie_escogida]
+
+especie_escogida
+
+muestra_id_cl <- iris[iris$Species%in%especie_escogida,]
+
+head(muestra_id_cl)
+```
+
+En general utilizaremos la función:
+
+**sample(x, n, replace = TRUE/FALSE, prob = la probabilidad de aparición de los distintos elementos de x)**
+
+**set.seed(x) para fijar la semilla de aletoriedad a fin de tener unos resultados reproducibles**
+

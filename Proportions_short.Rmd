@@ -1,0 +1,41 @@
+---
+title: "Proportions"
+author: "Guillem"
+date: "29 de enero de 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## PROPORCIONES MUESTRALES
+
+```{r}
+set.seed(1002)
+flores_elegidas <- sample(1:150,60,replace=TRUE)
+muestra_flores <- iris[flores_elegidas, ]
+
+table(muestra_flores$Species=="setosa")
+
+prop_setosa <- (table(muestra_flores$Species=="setosa"))[2] / length(muestra_flores$Species)
+
+prop_setosa # proporción muestral de la variante setosa
+
+props_muestrales <- replicate(1000, (table(sample(iris$Species, 60, replace=TRUE)=="setosa"))[2] / length(muestra_flores$Species))
+
+sd(props_muestrales) #El error estándar es muy reducido
+
+hist(props_muestrales)
+```
+
+## Estimar el número de elementos de una población
+
+```{r}
+taxis = c(1217, 600, 883, 1026, 150, 725, 297, 137, 38, 961, 538, 1154, 314, 1121, 823, 156, 940, 99, 967, 123, 1341, 141 ,1245, 575, 1445, 1332, 1343, 1234, 1343)
+
+(N=max(taxis) + (max(taxis) - length(taxis)) / length(taxis))
+
+# Estadístico utilizado en el famoso caso del problema de los tanques alemanes con un ejemplo con taxis (para distribución uniformes discreta)
+```
+
