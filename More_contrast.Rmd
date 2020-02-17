@@ -226,6 +226,7 @@ matriz_prop
 
 (éxitos = matriz_prop[2,1])
 
+
 binom.test(éxitos, n , p = 0.5)
 ```
 
