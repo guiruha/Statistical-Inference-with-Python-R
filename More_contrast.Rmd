@@ -1,0 +1,231 @@
+---
+title: "More_Contrast"
+author: "Guillem"
+date: "12 February 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Ejercicio**
+
+Se han metido los siguientes valores en miles de personas para la audiencia de un programa de radio en $n = 10$
+
+$$521, 742, 593, 635, 788, 717, 606, 639, 666, 624$$
+Contrastar si la varianza de la audiencia es 6400 al nivel d esignificación del 5%, **suponiendo que la población es normal**
+
+$$
+\left\{
+\begin{array}{ll}
+H_0: \sigma = \sqrt{6400} = 80
+\\
+H_1: \sigma \neq 80
+\end{array}
+\right.
+$$
+El estádistico de contraste es:
+
+$$ \chi²_{n-1}$$
+```{r}
+Per <- c(521, 742, 593, 635, 788, 717, 606, 639, 666, 624)
+
+varz <- 6400
+
+alpha <- 0.05
+
+n  <- 10
+var(Per)
+
+Chi2 <- (n -1)*var(Per) / varz
+Chi2
+
+#Podemos utilizar la liberia teaching demos
+
+library(TeachingDemos)
+sigma.test(x = Per, sigma = 80, conf.level = 0.95, alternative = "two.sided")
+
+```
+*Otro ejemplo de contrastes*
+
+Vamos a contrastar si la varianza d ela amplitud del sépalo de las flores de la tabla de datos iris es menos que 0.2
+
+$$
+\left\{
+\begin{array}{ll}
+H_0: \sigma^2 = 0.2 \\
+H_1: \sigma² < 0.2
+\end{array}
+\right.
+$$
+
+```{r}
+set.seed(2020)
+flores_elegidas <- sample(1:150, 40, replace = TRUE)
+muestra_flores = iris[flores_elegidas,]
+
+
+library(TeachingDemos)
+sigma.test(muestra_flores$Sepal.Width, sigmasq = 0.2, alternative = "less")
+```
+
+# Contrastes para dos medias independientes en R con función t.test
+
+```{r}
+set.seed(45)
+flores_elegidas_setosa = sample(1:50, 40, replace = TRUE)
+flores_elegidas_versicolor = sample(51:100, 40, replace = TRUE)
+
+muestra_setosa = iris[flores_elegidas_setosa,]
+muestra_versicolor = iris[flores_elegidas_versicolor,]
+
+# Test con varianzas diferentes
+t.test(muestra_setosa$Petal.Length, muestra_versicolor$Petal.Length, alternative = 'two.side')
+
+# Test con varianzas iguales
+t.test(muestra_setosa$Petal.Length, muestra_versicolor$Petal.Length, alternative = 'two.side', var.equal = TRUE)
+
+```
+
+# Test de Fisher 
+
+```{r}
+library(MASS)
+madre_cau <- rownames(birthwt[birthwt$race ==1,])
+madre_afr <- rownames(birthwt[birthwt$race == 2,])
+set.seed(2020)
+
+muestra_madcau <- birthwt[sample(madre_cau, 50, replace = TRUE),]
+
+muestra_madfr <- birthwt[sample(madre_afr, 50, replace = TRUE),]
+
+muestra_total <- rbind(muestra_madcau, muestra_madfr)
+
+matriz_fisher <- table(muestra_total$smoke, muestra_total$race)
+
+matriz_fisher
+
+# Hay que poner el exito primero, para ser más "purista"
+
+matriz_fisher <- rbind(matriz_fisher[2,], matriz_fisher[1,])
+
+fisher.test(matriz_fisher)
+
+```
+**El p-valor del contraste ha sido 0.4216** mayor que 0.1. Concluimos que no tenemos evidencias para rechazar que las proporciones de madres fumadoras de "raza" caucásica y afroamericana sean iguales. Dicho de otra manera, no rechazamos la hipótesis de nula de igualdad de proporciones.
+
+# Contraste para dos proporciones con muestras grandes
+
+```{r}
+table(muestra_madcau$smoke)
+
+table(muestra_madfr$smoke)
+
+```
+Tenemos un total de 25 madres caucásicas fumadoras entre las 50 de la muestra y 13 afroamericanas fumadoras entre las 50 de su propia muestra.
+
+Planteamos el siguiente contraste:
+
+$$
+\left\{
+\begin{array}{ll}
+H_0: p_c = p_a \\
+H_1: p_c \neq p_a
+\end{array}
+\right.
+$$
+
+donde $p_c$ y $p_a$ representan las proporciones de madres fumadoras de raza caucasica y afroamericana respectivamente.
+
+```{r}
+n_cau <- table(muestra_madcau$smoke)[2]
+n_afr <- table(muestra_madfr$smoke)[2]
+
+prop.test(c(n_cau, n_afr), c(50, 50))
+```
+Al ser el $p_value$ < 0.05 hay evidencias significativas para rechazar $H_0$ por tanto podríamos afirmar con 95% de confianza que la proporción de madres fumadores de raza caucásica son mayores que las madres africanas
+
+# Contrastes para varianzas
+
+```{r}
+var.test(muestra_setosa$Petal.Length, muestra_versicolor$Petal.Length)
+```
+El p-valor del contraste es 0 y port tanto concluimos que tenemos evidencias suficientes para afirmar que las varianzas de las longitudes del pétalos de las flroes de als especies setos y versiocolor son diferentes.
+
+# Test no paramétrico para realizar contrastes entre varianzas E.G: TEST de Fligner-Killeen
+
+```{r}
+# Se aplica o bien a una list formada por las dos muestras, o bien a una fórmula que separe un vector numérico en las dos muestras por medio de un factor de dos niveles
+fligner.test(list(muestra_setosa$Petal.Length, muestra_versicolor$Petal.Length))
+```
+Como el p-valor vuelve a ser muy reducido llegamos a la misma conclusión: tenemos evidencias suficientes para afirmar que las varianzas de las longitudes del pétalos de las flores de las especies setoas y versicolor son diferentes.
+
+**La ventaja de este test es que no necesitamos la normalidad de las muestras, aunque su potencia sea inferior**
+
+# Contrastes para medias emparejadas en T test
+
+Nos planteamos si la longitud del sépalo supera la longitud del pétalo para las flores de la especie virginica en la tabla de datos iris
+
+
+$$
+H_0: \mu_{sépalo,virginica} = \mu_{pétalo, virginica} \\
+H_0: \mu_{sépalo,virginica} > \mu_{pétalo, virginica}
+$$
+
+
+```{r}
+set.seed(110)
+flores_escogidas = sample(101:150, 40, replace = TRUE)
+muestra_virginica = iris[flores_escogidas,]
+
+t.test(muestra_virginica$Sepal.Length, muestra_virginica$Petal.Length, paired = TRUE, alternative = "greater")
+
+```
+
+# Contrastes de proporciones de muestras emparejadas
+
+Si las proporciones están emparejadas no podemos utilizar el test de Fisher
+
+La solución es realizar un contraste bilateral (o los unilaterales asociados):
+
+$$
+H_0: p_1 = p_2 \\
+H_1: p_1 \neq p_2
+$$
+
+Dicho contraste tiene sentido cuando n es grande y el número b + c de casos discordantes (en los que una caraterística da Sí y la otra da No) es razonablemente grande, digamos $\geq$ 20.
+Para ello utilizaremos el **test de McNemar**.
+
+```{r}
+library(MASS)
+set.seed(333)
+madres_elegidas = sample(1:189, 30, replace = TRUE)
+muestras_madres = birthwt[madres_elegidas,]
+
+(matriz_prop = table(muestras_madres$smoke, muestras_madres$ht))
+
+# La matriz no es correcta por lo que hay que cambiarla
+
+matriz_prop = rbind(matriz_prop[2,], matriz_prop[1,])
+matriz_prop = cbind(matriz_prop[,2], matriz_prop[,1])
+
+matriz_prop
+
+mcnemar.test(matriz_prop)
+
+```
+Hemos obtenido el p-valor de 0.09609, si consideramos un confianza del 95% podriamos no rechazar la $H_0$, pero al estar en la "zona de penumbra" no deberíamos mojarnos a la hora de sacar conclusiones.
+
+**También podemos shacer contrastes para proporciones con muestras emperajadas con el binom.test**
+
+```{r}
+matriz_prop 
+
+(n = matriz_prop[1,2] + matriz_prop[2,1]) # muesta de casos discordantes
+
+(éxitos = matriz_prop[2,1])
+
+binom.test(éxitos, n , p = 0.5)
+```
+
