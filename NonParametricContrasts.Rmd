@@ -1,0 +1,94 @@
+---
+title: "NonParametricContrasts"
+author: "Guillem"
+date: "18 February 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Contrastes no parámetricos de forma visual
+#### Histogramas
+
+```{r}
+muestra = iris$Sepal.Width
+plot(density(muestra), main = "Estimación de la densidad")
+```
+Como podemos observar en el gráfico de densidad, la distribución presenta bastantes indicios de ser una normal.
+
+```{r}
+muestra = iris$Sepal.Width
+plot(density(muestra), main = "Estimación de la densidad")
+x = seq(from=1, to = 5, by =  0.01)
+mu = mean(iris$Sepal.Width)
+sigma = sd(iris$Sepal.Width)
+lines(x, dnorm(x,mean=mu,sd=sigma), col = "red")
+```
+Vemos que la campana de Gauss se parece bastante a la estimación de la densidad.
+La cuestión ahora es: ¿podemos aceptar que el parecido es suficiente para aceptar que la distribución de la anchura del sépalo es normal?
+
+#### QQ-plot
+
+```{r}
+
+qqnorm(y = iris$Sepal.Width)
+qqline(y = iris$Sepal.Width, distribution = qnorm)
+qqline(y = iris$Sepal.Width + 0.50/2, distribution = qnorm)
+
+```
+
+# Contraste $\chi²$ de Pearson
+
+```{r}
+set.seed(2020)
+muestra_flores <- sample(iris$Species, 10)
+flores_escogidas <- iris[muestra_flores,]
+table(muestra_flores)
+
+chisq.test(table(muestra_flores))
+```
+R nos avisa que las aproximaciones pueden ser incorrectas. La razón es que las **frecuencias observadas** no son mayores que 5 ya que éstas valen $e_{setosa}=e_{virginica}=e_{versicolor} = \frac{10}{3} \approx  3.3333$
+
+Para solventar este problema, vamos a simular el p-valor:
+
+```{r}
+chisq.test(table(muestra_flores), simulate.p.value = TRUE, B = 2000)
+```
+Con 2000 replicaciones, al obtener un p-valor grande, no tenemos suficientes evidencias para rechazar que la proporción de especies en la muestra no sea la misma
+
+```{r}
+extremos_izquierdos <- c(-Inf, 1.95, 2.45, 2.95, 3.45, 3.95, 4.45)
+extremos_derechos <- c(1.95, 2.45, 2.95, 3.45, 3.95, 4.45, Inf)
+frecuencias_empiricas <- c(2, 1,4, 15, 10, 5, 3)
+n = sum(frecuencias_empiricas)
+```
+
+```{r}
+mu = 3.5; sigma = 0.7;
+probabilidades_teoricas <- pnorm(extremos_derechos, mu, sigma) - pnorm(extremos_izquierdos, mu, sigma)
+
+chisq.test(frecuencias_empiricas, p = probabilidades_teoricas)
+
+chisq.test(frecuencias_empiricas, p = probabilidades_teoricas, simulate.p.value = TRUE, B = 2000)
+```
+
+# Contraste $\chi^2$ de Pearson con parámetros desconocidos
+
+```{r}
+frecuencias_empiricas <- c(229, 211, 93, 35, 8)
+estimacion_lambda <- (211+93*2+35*3+7*4+1*5)/(229+211+93+35+7+1)
+probabilidades_esperadas <- c(dpois(0, estimacion_lambda), dpois(1, estimacion_lambda), dpois(2, estimacion_lambda), dpois(3, estimacion_lambda), 1-ppois(3, estimacion_lambda))
+
+chisq.test(frecuencias_empiricas, p=probabilidades_esperadas)
+```
+Aunque este contraste podría ser fiable, no está teniendo en cuenta que estamos estimando un parámetro, por lo que se debería restar 1 a los grados de libertad. Como solución podemos hacer:
+
+```{r}
+test.chi2 = chisq.test(frecuencias_empiricas, p = probabilidades_esperadas)
+
+pchisq(test.chi2[[1]],3, lower.tail = FALSE)
+```
+
+
