@@ -39,6 +39,7 @@ qqline(y = iris$Sepal.Width + 0.50/2, distribution = qnorm)
 
 ```
 
+
 # Contraste $\chi²$ de Pearson
 
 ```{r}
@@ -91,4 +92,99 @@ test.chi2 = chisq.test(frecuencias_empiricas, p = probabilidades_esperadas)
 pchisq(test.chi2[[1]],3, lower.tail = FALSE)
 ```
 
+# Test Kolmogorov-Sminorv
 
+Se cree que el tiempo en segundos entre dos reservas de vuelo en un portal web en un mismo día podría ser una distribución exponencial con parámetro $\lambda = 1/5$. Una muestra de 10 tiempos entre reservas consecutivas de vuelos medidos en segundos es la siguiente:
+
+```{r}
+ks.test(muestra_coches, "ppois", 3.7)
+```
+
+```{r}
+x = c(1.6, 1.8, 2.8, 5.9, 4.3, 4.7, 4.8, 7.3, 8.7, 11.1)
+```
+
+* ¿Cuál es la distribución teórica propuesta?
+
+$$
+F_X(x) = \left\{
+\begin{array}{ll}
+1 - e^{-\frac{x}{5}} & \textrm{si}\ x>0 \\
+0 & \textrm{en otro caso}
+\end{array}
+\right .
+$$
+$$
+\left\{
+\begin{array}{ll}
+H_0: & \textrm{Los datos provienen de una distribución } Exp(\frac{1}{5}) \\
+H_1 : & \textrm{Los datos NO provienen de tal distribución}
+\end{array}
+\right.
+$$
+* Contrastamos la $H_0$ con un test KS al nivel de significación $\alpha = 0.1$
+
+$$
+D_{10} = \max_{1\leq i \leq 10} \left(\max\{|F_X(x_i) - \frac{i-1}{10}|, |F_X(x_i) - \frac{i}{10}|\}\right)$$
+
+```{r}
+i = 1:10
+Fx = 1-exp(-x/5)
+
+df = data.frame(i = i, xi = x,
+                Fx = Fx,
+                Fx1 = abs(Fx - (i-1)/10),
+                Fx2 = abs(Fx - i/10))
+df$FxM = pmax(df$Fx1, df$Fx2)
+
+knitr::kable(df)
+
+
+
+D = max(df$FxM)
+D
+
+ks.test(x, "pexp", 1/5)
+```
+Como el $p_{value} = 0.3595 > 0.05$ tenemos evidencias suficientes para no rechazar $H_0$
+
+# Test Kolmogorov-Smirnov-Lilliefors
+
+```{r}
+library(nortest)
+lillie.test(x)
+```
+
+Uno de los inconvenientes de lilliefors test es que le cuesta detectar diferencias prominentes en un extremo u otro de la distribución, comprobemos este problema con una $t de Student$
+
+```{r}
+set.seed(100)
+x = rt(50, 3)
+lillie.test(x)
+```
+Como observamos nos da un $p_{value} = 0.205$ por lo que no podemos rechazar que se distribuya en una normal, esto es debido a que la función de densidad de la t de Student es algo más aplanada a la norma y el test K-S-L test no es capaz de detectar las diferencias sutiles en los extremos de las colas
+
+# Test Anderson-Darling
+
+```{r}
+set.seed(100)
+x = rt(50, 3)
+ad.test(x)
+```
+
+# Test Shapiro-Wilks
+
+```{r}
+set.seed(100)
+x = rt(50, 3)
+shapiro.test(x)
+```
+
+# Test omnibuys de D'Agostino-Pearson
+
+```{r}
+set.seed(100)
+x = rt(50, 3)
+library(fBasics)
+dagoTest(x)
+```
