@@ -1,0 +1,88 @@
+---
+title: "ANOVAparaDosFactores"
+author: "Guillem"
+date: "4 March 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+GSI = c(0.90,0.83,1.06,0.67,0.98,0.57,1.29,0.47,1.12,0.66,
+        1.30,1.01,2.88,1.52,2.42,1.02,2.66,1.32,2.94,1.63)
+temperatura = factor(rep(c(27,16),each=10))
+fotoperiodos = factor(rep(c(9,14),times=10))
+tabla.datos.GSI = data.frame(GSI,temperatura,fotoperiodos)
+head(tabla.datos.GSI)
+```
+
+```{r}
+suma_combinacion_niveles = aggregate(GSI ~ temperatura + fotoperiodos, data = tabla.datos.GSI, FUN = "sum")
+
+suma_combinacion_niveles
+```
+```{r}
+media_combinacion_niveles = aggregate(GSI ~ temperatura + fotoperiodos, data = tabla.datos.GSI, FUN = "mean")
+
+media_combinacion_niveles
+```
+
+```{r}
+(suma_fotoperiodos = aggregate(GSI ~ fotoperiodos, data = tabla.datos.GSI, FUN = "sum"))
+(media_fotoperiodos = aggregate(GSI ~ fotoperiodos, data = tabla.datos.GSI, FUN = "mean"))
+(suma_temperatura = aggregate(GSI ~ temperatura, data = tabla.datos.GSI, FUN = "sum"))
+(media_temperatura = aggregate(GSI ~ temperatura, data = tabla.datos.GSI, FUN = "mean"))
+```
+```{r}
+(suma_total = sum(tabla.datos.GSI$GSI))
+(media_muestral = mean(tabla.datos.GSI$GSI))
+(suma_cuadrados = sum(tabla.datos.GSI$GSI^2))
+```
+```{r}
+a <- 2; b <- 2; n <- 5
+(SST = suma_cuadrados - suma_total^2/(a*b*n))
+(SSA = (1 / (b*n)*sum(suma_fotoperiodos[,2]^2)- suma_total^2/(a*b*n)))
+(SSB = (1/(a*n))*sum(suma_temperatura[,2]^2)-suma_total^2/(a*b*n))
+(SSTr = (1/n)*sum(suma_combinacion_niveles[,3]^2)-suma_total^2/(a*b*n))
+(SSAB = SSTr-SSA-SSB)
+(SSE=SST-SSTr)
+```
+```{r}
+MSA <- SSA/(a - 1)
+MSB <- SSB/(b -1 )
+MSAB <- SSAB / ((a-1)*(b-1))
+MSTr <- SSTr/(a*b-1)
+MSE <- SSE/(a*b*(n-1))
+```
+
+CON ESTOS CUADRADOS MEDIOS REALIZARÍAMOS CUALQUIERA DE LOS CUATRO CONTRASTES QUE SE PUEDEN REALIZAR:
+
+* Contrastes de medias del Factor A
+* Contrastes de medias del Factor B
+* Contrastes de tratamientos
+* Contrastes de no interacción
+
+SE puede hacer de forma mucho más rápida con la función de analisis of variance (avo)
+
+```{r}
+boxplot(GSI ~ fotoperiodos+temperatura, data = tabla.datos.GSI, xlab = "Combinación fotoperiodo y temperatura", ylab = "GSI")
+summary(aov(GSI ~ fotoperiodos*temperatura, data = tabla.datos.GSI))
+```
+Para el contraste de tratamientos debemos cambiar la sintaxis
+
+```{r}
+summary(aov(GSI ~ fotoperiodos:temperatura, data = tabla.datos.GSI))
+```
+
+## Gráficos de interacción
+```{r}
+GSI <- tabla.datos.GSI$GSI
+fotorperiodos <- tabla.datos.GSI$fotoperiodos
+temperatura <- tabla.datos.GSI$temperatura
+
+interaction.plot(fotoperiodos, temperatura, GSI, xlab = "fotoperiodo", ylab = "GSI")
+interaction.plot(temperatura, fotoperiodos, GSI, xlab = "temperatura", ylab = "GSI")
+```
+
