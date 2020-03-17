@@ -390,3 +390,177 @@ predict.lm(lm(y~x1+x2+x3+x4), newdata, interval = "confidence", level = 0.95)
 predict.lm(lm(y~x1+x2+x3+x4), newdata, interval = "prediction", level = 0.95)
 ```
 
+### Contrastes de hipótesis para los parametros $\beta_i$
+
+$$
+\left\{
+\begin{array}{ll}
+H_0: \mu_{Y|x_1} = · · · = \mu_{Y|x_n} \\
+H_1: \exists i,j \text{tal que} \mu_{Y|x_i} \neq \mu_{Y|x_j}
+\end{array}
+\right.
+$$
+
+```{r}
+anova(lm(y~X[, 2:5]))
+```
+
+$$
+\left\{
+\begin{array}{ll}
+H_0: \beta_i = 0 \\
+H_1: \beta_i \neq 0
+\end{array}
+\right.
+$$
+
+```{r}
+summary(lm(y~X[, 2:5]))
+```
+
+### Diagnósticos de regresión
+
+```{r}
+set.seed(2020)
+x2 <- runif(100)
+y2 <- 1-2*x2+0.3*x2*rnorm(100)
+par(mfrow=c(1,2))
+plot(x2, y2)
+r = lm(y2~x2)
+abline(r, col = "red")
+plot(r$res~r$fitted.values, xlab = "Valores ajustados", ylab = "Residuos del modelo")
+```
+Parece que los puntos si que se ajustan a una recta si vemos el plot de la regresión. No obstante si observamos el plot de los resiudos detectamos cierta heterocedasticidad, ya que se observa un distribución "triangular", donde a medida que aumenta el valor disminuye la dispersión.
+
+Apliquemos ahora el **test de White**
+
+```{r}
+residuos <- r$residuals
+(X0 <- length(residuos)*summary(lm(residuos^2~x2+I(x2^2)))$r.squared)
+```
+```{r}
+(pvalue <- pchisq(X0, 2, lower.tail = FALSE))
+```
+
+Como tenemos un $p_{value}$ concluimos consecuentemente que tenemos evidencias suficientes apra rechazar que las varianzas de los residuos no son iguales **Heterocedasticidad**
+
+Para el **Test de White** R ya tiene una función ```bptest``` del paquete lmtest
+
+```{r}
+library(lmtest)
+bptest(r, ~x2 + I(x2**2))
+```
+
+En este caso se nos aplica un test de Breusch-Pagan ya que el número de variables independientes es mayor al número de muestras de la variable dependiente.
+
+No obstante apliquemos el **Test de Breusch-Pagan** directamente
+
+```{r}
+(R2 <- summary(lm(errores**2 ~ X))$r.squared)
+(X0 <- n*R2)
+(pvalue <- pchisq(X0, k, lower.tail = FALSE))
+```
+Concluimos que no tenemos indicios suficientes para rechazar la homocedasticidad de los errores.
+
+```{r}
+bptest(lm(y2~x2))
+```
+
+```{r}
+library(car)
+sigma_estimada <- sum(errores**2)/(n-k-1)
+car::qqPlot(errores, distribution = "norm", mean = 0, sd = sqrt(sigma_estimada))
+```
+Para verificar que los residuos siguen una distribución normal aplicamos el **Kolmogorov-Smirnov-Lilliefors**
+
+```{r}
+lillie.test(errores)
+```
+
+Como el p-value es muy grande, concluimos que no tenemos indicios suficentes para rechazar la normalidad de los residuos
+
+### Autocorrelación de los errores
+
+```{r}
+diferencias <- errores[2:n] - errores[1:(n-1)]
+(estadistico_d <- sum(diferencias**2)/sum(errores**2))
+```
+
+Si miramos los valores críticos para $\alpha = 0.05$, n = 9 y k = 4 en la Tabla del estadístico de Durbin-Watson, obtenemos los valores siguientes: $d_{L, 0.05} = 0.3$ y $d_{U, 0.05} = 2.59$
+
+Como 1.91 está entre $d_{L, 0.05}$ y $d_{U, 0.05}$, estamos en la zona de penumbra y no podmeos tomar una decisión clara.
+
+Si testeamos si hay autocorrelación negativa. El valor 4 - d será: 2.089352. Observamos también que 4 - esta entre $d_{L, 0.05}$ y $d_{U, 0.05}$, estamos en la zona de penumbra y no podemos tomar una decisión clara.
+
+En resumen, en este ejemplo no podemos decidir d eforma clara a partir de Durbin-Watson sin los errores están correlados o incorrelados
+
+```{r}
+dwtest(r,alternative="greater")
+```
+
+Tenemos evidencias suficientes para decir que no hay una correlación positiva
+
+```{r}
+dwtest(r,alternative="less")
+```
+Tenemos evidencias suficientes para decir que no hay una correlación negativa
+
+
+### Contraste de Aditividad
+```{r}
+newr <- lm(y ~ X[,2]+X[,3]+X[,4]+X[,5])
+valores_ajustados2 <- newr$fitted.values**2
+summary(lm(y ~ X[,2]+X[,3]+X[,4]+X[,5]+valores_ajustados2))[[4]]
+```
+
+Como vemos la variable $\hat{y_i}^2$ no es siginificativa dle model con un pvalue de 0.2779. Concluimos por tanto que no tenemos evidencias suficientes para rechazar la aditividad del modelo.
+
+Para realizar el **Test de Tuckey**:
+
+```{r}
+library(car)
+car::residualPlots(newr, plot = TRUE)
+```
+
+Para observar la linealidad podemo graficar los residuos parciales $e_{ij} = e_i + b_i·x_{ij}$
+
+```{r}
+library(car)
+crPlots(newr)
+```
+La única variable que no se ajsuta al mdoelo lineal es la variable $x_4$. Todas las demás presentan un ajuste bastante aceptable
+
+Vamos a calcular los leverages para la regresion realizada.
+
+```{r}
+(valores_hat <- hatvalues(newr))
+which(valores_hat > 2*(k+1)/n)
+```
+Vemos que nuestro ejemplo no hay ninguna observación que puede considerarse con **leverage** alto
+
+Ahora buscamos si existe algún outlier en la muestra
+
+```{r}
+outlierTest(newr)
+```
+Observamos que la muestra 8 es que el que tiene el **residuo estunderizado** más alto pero el p-valor ajustado por Bonferroni nos permite rechazar que sea un **outlier**
+
+Por último calcularemos la **distancia de Cook**
+
+```{r}
+(distancias_cook <- cooks.distance(newr))
+(which(distancias_cook > 4/(n-k-1)))
+```
+
+Observamos que la muestra nº9 es una observación influyente según las **distancia de Cook**
+
+### Selección de un modelo mejor
+
+Existe la función ```step``` que, a partir del método AIC nos da el mejor modelo desde en el sentido de buscar un equilibrio entre la simplicidad y la adecuación:
+
+```{r}
+step(lm(y ~ X[,2]+X[,3]+X[,4]+X[,5]))
+```
+
+Con un AIC de -3.78, R nos dice que el mejor modelo es considerar las variables regresoras $x_2$ y $x_3$
+
