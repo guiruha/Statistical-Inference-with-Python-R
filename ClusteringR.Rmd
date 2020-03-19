@@ -1,0 +1,303 @@
+---
+title: "ClusteringR"
+author: "Guillem"
+date: "18 March 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Algoritmo de Kmeans
+
+```{r}
+(resultado_km <- kmeans(trees, centers = 3, algorithm = "MacQueen"))
+```
+¿Qué registro están en cada cluster?
+
+```{r}
+which(resultado_km$cluster==1)
+```
+
+```{r}
+which(resultado_km$cluster == 2)
+```
+
+
+¿Dónde están los centroides?
+```{r}
+resultado_km$centers
+```
+
+Calculamos el $SSC_i$
+```{r}
+resultado_km$withinss
+```
+
+Calculasmos el $SSC$ toal
+```{r}
+sum(resultado_km$withinss) == resultado_km$tot.withinss
+resultado_km$tot.withinss
+```
+
+$SSC$ suponiendo que sólo hubiera un cluster:
+
+```{r}
+resultado_km$totss
+```
+
+La dispersión de los centros de los clusters respecto del punto medio de todos los árboles:
+
+```{r}
+resultado_km$betweenss
+```
+
+```{r}
+resultado_km$betweenss/resultado_km$totss
+```
+
+Ejecuta sólo una vez el algoritmo de kmeans no es aconsejable debido a la aleatoriedad de los inicios del algoritmo. Por tanto, ejecutamos el algoritmo 50 veces para obtener un mínimo más óptimo
+```{r}
+iter <- 50
+SSCs <- c()
+for (i in 1:iter){
+  SSCs <- c(SSCs, kmeans(trees, 3, algorithm = "MacQueen")$tot.withins)
+}
+min(SSCs)
+```
+
+Observamos que hemos alcanzado el mínimo en el caso anterior.
+
+#Clustering Jerárquico
+
+### Distancias de datos binarios
+
+```{r}
+library(car)
+set.seed(2020)
+individuos_elegidos <- sample(1:5226, 25)
+tabla_arrestados <- Arrests[individuos_elegidos, c("colour", "sex", "employed", "citizen")]
+rownames(tabla_arrestados)<- 1:25
+```
+
+```{r}
+head(tabla_arrestados, 10)
+```
+
+Vamos a hallar la matriz de **distancias de Hamming** entre los 25 indiviuos.
+
+```{r}
+tabla_arrestados$colour <- ifelse(tabla_arrestados$colour=="white", 0, 1)
+tabla_arrestados$sex <- ifelse(tabla_arrestados$sex=="Male",0, 1)
+tabla_arrestados$employed <- ifelse(tabla_arrestados$employed == "No", 0, 1)
+tabla_arrestados$citizen <- ifelse(tabla_arrestados$citizen=="No", 0, 1)
+tabla_arrestados
+```
+
+```{r}
+as <- function(xi, xj){
+  n <- length(xi)
+  a0 <- length(which(xi==xj & xi == 0))
+  a1 <- length(which(xi == xj & xi == 1))
+  a2 <- length(which(xi != xj))
+  return(c(a0, a1, a2))
+}
+```
+
+La **distancia de Hamming** viene dada por la función: $\sigma_{ij} = \frac{a_1 + a_0}{a_0+a_1+a_2}$
+
+```{r}
+n <- dim(tabla_arrestados)[1]
+matriz_dist_hamming <- matrix(1, n, n)
+for (i in 1:(n-1)){
+  for (j in (i+1):n){
+    aux <- as(tabla_arrestados[i,],tabla_arrestados[j,])
+    matriz_dist_hamming[i, j]<-(aux[1]+aux[2])/sum(aux)
+    matriz_dist_hamming[j, i]<-matriz_dist_hamming[i, j]  
+  }
+}
+```
+
+```{r}
+matriz_dist_hamming
+```
+
+### Distancias para datos continuos
+
+```{r}
+set.seed(2020)
+flores_elegidas <- sample(1:150, 10)
+tabla_iris <- iris[flores_elegidas,]
+rownames(tabla_iris) <- 1:10
+```
+
+En primer lugar definimos una función que nos calcula la distancia euclídea entre dos vectores:
+
+```{r}
+dist_euclidea <- function(x, y){
+  n <-length(x)
+  d <- sqrt(sum((x-y)**2))
+  return(d)
+}
+```
+
+La matriz de distancias será la siguiente:
+
+```{r}
+n <- dim(tabla_iris)[1]
+matriz_dist_iris <- matrix(0, n, n)
+for (i in 1:(n-1)){
+  for (j in (i+1):n){
+    matriz_dist_iris[i,j] <- dist_euclidea(tabla_iris[i, 1:4], tabla_iris[j, 1:4])
+    matriz_dist_iris[j,i]<-matriz_dist_iris[i,j]
+  }
+}
+```
+
+```{r}
+round(matriz_dist_iris, 2)
+```
+
+Ahora programamos una función que calcule la **distancia de Manhatan**
+
+```{r}
+dist_manhatan <- function(x, y){
+  n <-length(x)
+  d <- sqrt(sum(abs(x-y)))
+  return(d)
+}
+```
+
+```{r}
+n <- dim(tabla_iris)[1]
+matriz_dist_iris <- matrix(0, n, n)
+for (i in 1:(n-1)){
+  for (j in (i+1):n){
+    matriz_dist_iris[i,j] <- dist_manhatan(tabla_iris[i, 1:4], tabla_iris[j, 1:4])
+    matriz_dist_iris[j,i]<-matriz_dist_iris[i,j]
+  }
+}
+```
+
+```{r}
+round(matriz_dist_iris, 2)
+```
+
+Existe una matriz de distancias **D** entre los objetos de la tabla de datos que pueden ser sacados con la función **dist**:
+
+```{r}
+round(dist(tabla_iris[, 1:4]), 2)
+```
+
+```{r}
+round(as.matrix(dist(tabla_iris[, 1:4])),2)
+```
+
+```{r}
+round(dist(as.matrix(tabla_arrestados)), 2)
+```
+
+### Escalado de datos
+
+Si no queremos que la variación de los datos intervenga en el análisis de las distancias posterior debemos escalar los datos restando su media y dividiendo por su desviación típica.
+```{r}
+tabla_iris_escalada <- scale(tabla_iris[, 1:4])
+tabla_iris_escalada
+```
+```{r}
+(apply(tabla_iris_escalada, 2, mean))
+apply(tabla_iris_escalada, 2, sd)
+```
+Observamos que su media es 0 y su desviación típica es 1.
+
+### Clustering Jerárquico paso a paso
+
+```{r}
+matriz_nueva <-matriz_dist_iris
+diag(matriz_nueva)<-max(matriz_dist_iris)
+(flores_min <- which(matriz_nueva == min(matriz_nueva), arr.ind = TRUE))
+```
+
+Observamos que las flores 4 y 2 son las más cercanas
+
+```{r}
+sum(matriz_dist_iris[4] - matriz_dist_iris[2])
+```
+
+Las flores 4 y 2 formarán un nuevo cluster. A continuación tenemos que hallar la distancia del nuevo cluster {10, 2} a los demás cluster que en este caso serán una sola flor usando la expresión del enlace simple:
+
+$$d(C, C_1 + C_2) = min(d(C, C_1), d(C, C_2))$$
+y así sucesivamente hasta alcanzar un solo clúster
+
+### Clustering Jerárquico algomerativo
+
+```{r}
+clustering_jer <- hclust(dist(tabla_iris[,1:4]), method = "single")
+```
+
+```{r}
+clustering_jer$merge
+```
+Primero se agrupa la flor 2 y 10. Seguidamente la flor 4 se une al cluster 1. La tercera iteración une la flor 3 y la 9. Y así sucesivamente hasta que se une los últimos clusters creados (7 y 8).
+
+```{r}
+clustering_jer$height
+```
+``height`` nos muestra a qué distancia se producen las agrupacios de cada iteración del metodo ``merge``
+
+### Dibujar un dendrograma
+
+```{r}
+plot(clustering_jer, hang = -1, xlab = "muestra de flores tabla datos iris", sub = "", ylab = "distancia euclídea")
+```
+
+Para calcular los clusters utilizamos la funcion `cutree`
+
+```{r}
+cutree(clustering_jer, k = 3)
+```
+
+```{r}
+cutree(clustering_jer, h = 1.5)
+```
+
+Si queremos visualizar los clusters en el dendograma usamos la funcion `rect.hclust`
+
+```{r}
+plot(clustering_jer, hang = -1, xlab = "muestra de flores tabla de datos iris", ylab = "distancia euclidea", sub = "",labels = 1:10)
+rect.hclust(clustering_jer, h = 1.5)
+```
+
+```{r}
+clustering_irir_completo <- hclust(dist(tabla_iris[,1:4]), method = "complete")
+plot(clustering_irir_completo, hang = -1, xlab = "muestra de flores tabla de datos iris", sub="", ylab = "distancia euclidea", label = 1:10)
+rect.hclust(clustering_irir_completo, h = 2)
+```
+
+Para hacer clusters con datos binarios
+
+```{r}
+clustering_arrestado <- hclust(as.dist(1-matriz_dist_hamming), method = "ward.D")
+plot(clustering_arrestado)
+rect.hclust(clustering_arrestado, h = 0.5)
+```
+```{r}
+prueba <- cbind(mtcars[1], mtcars[4], mtcars[6:7])
+kmeans(prueba, centers = 4, algorithm = "Lloyd", trace = "Manhattan")
+
+```
+
+```{r}
+
+pure <- hclust(dist(scale(prueba)), method = "complete")
+pure$merge
+prueba[15:16,]
+```
+
+```{r}
+prueba <- cbind(mtcars[1], mtcars[4], mtcars[6:7])
+pure <- hclust(dist(scale(prueba)), method = "complete")
+plot(pure)
+rect.hclust(pure, k = 5)
+```
