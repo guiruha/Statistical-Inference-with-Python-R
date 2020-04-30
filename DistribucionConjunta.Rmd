@@ -1,0 +1,75 @@
+---
+title: "DistribucionConjunta"
+author: "Guillem"
+date: "30 April 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## FUNCIÓN DE DISTRIBUCIÓN CONJUNTA
+
+```{r}
+dist_con <- function(x, y){ifelse(x<0 | y>0, 0,
+                          ifelse(x >= 0 & x <= 1 & y>= 0 & y<=1, x*y,
+                          ifelse(x>= 0 & x<= 1 & y>1, x, ifelse(y>= 0 & y<=1 & x>1, y, 1))))}
+
+x <- seq(-2, 2, 0.1)
+y <- seq(-2, 2, 0.1)
+z <- outer(x, y, dist_con)
+persp(x, y, z, theta = 50, phi = 40, col = "blue", shade = 0.25, ticktype = 'detailed')
+
+```
+
+```{r}
+probadado <- function(x, n=6) sapply(x, FUN = function(x)
+  if (x %in% c(1:n)) {return(1/n)} else {return(0)})
+```
+
+```{r}
+probadado(4, 6)
+```
+
+```{r}
+probadado2 <- function(x, y, n = 6) {probadado(x, n)*probadado(y,n)}
+```
+
+```{r}
+probadado2(3, 4, 6)
+```
+
+```{r}
+psum_prod <- function(x, y, n=6){
+  Dxy <- data.frame(d1 = rep(1:n, each = n), d2 = rep(1:n, times = n))
+  Dxy$suma <- Dxy$d1+Dxy$d2
+  Dxy$producto <- Dxy$d1*Dxy$d2
+  aux <- Dxy[Dxy$suma == x& Dxy$producto == y, ]
+  sum(apply(aux[, 1:2], FUN = function(x) {probadado2(x[1], x[2], n = n)}, 1))
+}
+
+```
+
+Calculamos $P_{SP}(6,8) = \frac{2}{36}$
+
+```{r}
+psum_prod(6, 8)
+```
+
+```{r}
+den_con <- function(x,y){ifelse(x>=0 & y>= 0 & x>=y,
+                               2*exp(-x-y),0)}
+dist_con <- function(x,y){ifelse(x>=0 & y>=0 & x<=y,
+                                 1-2*exp(-x) + exp(-2*x), ifelse(x>= 0 & y>= 0 & x>= y,
+                                                                 1-2*exp(-x)-exp(-2*y)+2*exp(-x-y),0))}
+```
+
+```{r}
+x <- seq(-1, 4, 0.1)
+y <- seq(-1, 4, 0.1)
+z_den_con <- outer(x, y, den_con)
+z_dist_con <- outer(x, y, dist_con)
+persp(x, y, z_den_con, theta = 50, phi = 40, col = "green", shade = 0.25, ticktype="detailed")
+persp(x, y, z_dist_con, theta = 50, phi = 40, col = "blue", shade = 0.25, ticktype = "detailed")
+```
