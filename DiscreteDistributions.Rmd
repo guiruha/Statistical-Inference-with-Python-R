@@ -1,0 +1,207 @@
+---
+title: "DistribucionesNotablesDiscretas"
+author: "Guillem"
+date: "8 April 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Distribuciones Notables Discretas
+
+### Distribución Binomial
+
+Para una v.a X con distribución binomial $B(n = 10, p = 0.25)$
+
+Si queremos calcular la función de distribución $F_X(0) = P(X\leq0)$
+
+```{r}
+pbinom(0, size = 10, prob = 0.25)
+```
+y si queremos por ejemplo $F_X(4) = P(X\leq4)$
+
+```{r}
+pbinom(4, size = 10, prob = 0.25)
+```
+
+No obstante, si queremos calcular la probabilidad por ejemplo $P(X = 0)$
+
+```{r}
+dbinom(0, size = 10, prob = 0.25)
+```
+
+o por ejemplo para $P(X = 4)$
+
+```{r}
+dbinom(4, size = 10, prob = 0.25)
+```
+
+Generamos una muestra aleatoria de 100 valores de una población $B(20, 0.5)$
+
+```{r}
+rbinom(100, size = 20, prob = 0.5)
+```
+
+Vamos a dibujar la función de probabilidad y de distribución de una binomial
+
+```{r}
+par(mfrow = c(1,2))
+aux <- rep(0,22)
+aux[seq(2, 22, 2)] = dbinom(c(0:10), size = 10, prob = 0.25)
+plot(x = c(0:10), y = dbinom(c(0:10), size = 10, prob = 0.25),
+ylim = c(0, 1), xlim = c(-1, 11), xlab = "x",
+main = "Función de probabilidad\n B(n = 10, p = 0.25)")
+lines(x = rep(0:10, each = 2), y = aux, type = "h", lty = 2, col = "blue")
+curve(pbinom(x, size = 10, prob = 0.25),
+xlim = c(-1, 11), col = "blue", main = "Función de distribución\n B(n = 10, p, 0.25)")
+par(mfrow = c(1,1))
+```
+
+### Distribución Geométrica
+
+Cuando $X ~ Ge(p = 0.25)$
+
+$P(X = 0) = (1-0.25)^0 * 0.25^1 = 0.25$
+
+```{r}
+dgeom(0, prob = 0.25)
+```
+
+$P(X \leq 0) = 1 - (1- 0.25)^{0+1} = 1 - 0.75 = 0.25$
+
+```{r}
+pgeom(0, prob = 0.25)
+```
+
+$P(X \leq 4) = 1 - (1-0.25)^{4+1} = 1-0.75 = 1 - 0.75^5 = 0.7626953$
+
+```{r}
+pgeom(4, prob = 0.25)
+```
+
+Si queremos sacar una muestra de tamaño 25 de una $Ge(0.25)$
+
+```{r}
+rgeom(n = 25, prob = 0.25)
+```
+
+Vamos a dibujar la función de probabilidad y de distribución de una geometrica
+
+```{r}
+par(mfrow = c(1, 2))
+x <- c(0:10)
+plot(x=x, y = dgeom(x, prob=0.25),
+      ylim = c(0, 1), xlim = c(-1, 11), xlab = "x",
+      main = "Función de probabilidad \ Ge(p = 0.25)")
+lines(x = rep(0:10, each = 2), y = aux, type = "h", lty = 2, col = "blue")
+aux0 <- dgeom(c(0:10), prob = 0.25)
+ceros <- rep(0,21)
+aux = ceros
+aux[2*(c(1:11))] <- aux0
+curve(pgeom(x, prob = 0.25),
+      xlim = c(-1, 10), col = "blue",
+      main = "Función de distribución\n Ge(p=0.25)")
+par(mfrow = c(1, 1))
+```
+
+### Binomial Negativa 
+
+Considerando que X ~ $BN(2, 0.1)$ y queremos calcular P(X = 5)
+
+$P(X = 5) = {5+2-1\choose1} \cdot (1-0.1)^5 \cdot 0.1^2$
+
+```{r}
+dnbinom(5, size = 2, p = 0.1)
+```
+
+$P(X \leq 4)$
+```{r}
+pnbinom(4, size = 2, p = 0.1, lower.tail = FALSE)
+```
+
+```{r}
+par(mfrow = c(1,2))
+aux <- rep(0,22)
+aux[seq(2, 22, 2)] <- dnbinom(c(0:10), size = 2, prob = 0.1)
+plot(x = c(0:10), y = dnbinom(c(0:10), size = 2, prob = 0.1),
+ylim = c(0, 1), xlim = c(-1, 11), xlab = "x",
+main = "Función de probabilidad\n B(n = 2, p = 0.1)")
+lines(x = rep(0:10, each = 2), y = aux, type = "h", lty = 2, col = "blue")
+curve(pnbinom(x, size = 2, prob = 0.1),
+xlim = c(-1, 11), col = "blue", main = "Función de distribución\n BN(n = 2, p, 0.1)")
+par(mfrow = c(1,1))
+```
+# Distribución Poisson
+
+Sea X una v.a. $Po(\lambda = 3)$
+
+$$P(X = x) = \frac{\lambda^x}{x!} \cdot e^{-\lambda}$$
+
+```{r}
+dpois(0, lambda = 3)
+dpois(1, lambda = 3)
+```
+
+```{r}
+ppois(0, lambda = 3)
+ppois(1, lambda = 3)
+dpois(0, lambda = 3) + dpois(1, lambda = 3)
+```
+
+```{r}
+rpois(n = 100, lambda = 3)
+```
+
+```{r  echo = TRUE,eval=FALSE}
+lambda=20
+par(mfrow=c(1,2))
+n=qpois(0.99,lambda=lambda)
+aux=rep(0,(n+1)*2)
+aux[seq(2,(n+1)*2,2)]=dpois(c(0:n),lambda=lambda)
+ymax=max(ppois(0:n,lambda=lambda))
+plot(x=c(0:n),y=dpois(c(0:n),lambda=lambda),
+     ylim=c(0,ymax),xlim=c(-1,n+1),xlab="x",ylab="Función de probabilidad",
+     main=paste0(c("Función de probabilidad\n  Po(lambda=",lambda,")"),collapse = ""))
+lines(x=rep(0:n,each=2),y=aux,pch=21, type = "h", lty = 2,col="blue")
+curve(ppois(x,lambda=lambda),
+      xlim=c(-1,n+1),col="blue",ylab="Función de Distribución",
+      main=paste0(c("Función de distribución \n Po(lambda=",lambda,")"),collapse = ""))
+par(mfrow=c(1,1))
+```
+
+# Distribución Hipergeometrica
+
+Para una v.a. X que se distribuye X ~ $Ge(15, 10, 3)
+
+```{r}
+dhyper(2, m = 15, 10, k = 3)
+
+phyper(q = 1, m = 15, n = 10, k = 3)
+1 - phyper(q = 1, m = 15, n = 10, k = 3)
+
+rhyper(nn = 200, m = 15, n = 10, k = 3)
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+m=15
+n=10
+k=3
+a=max(c(0,k-n))
+b=min(c(m,k))
+l=b-a+1
+aux=rep(0,2*l)
+aux[seq(2,2*l,2)]=dhyper(c(a:b),m=m,n=n,k=k)
+x=a:b
+plot(x,y=dhyper(x,m=m,n=n,k=k),
+  ylim=c(0,0.6),xlim=c(a-1,b+1),xlab="x",
+  main=paste0("Función de probabilidad\n H(m=",m,", n=",n,", k=",k,")"))
+lines(x=rep(a:b,each=2),y=aux, type = "h", lty = 2,col="blue")
+curve(phyper(x,m=m,n=n,k=k),
+  xlim=c(a-1,b+1),col="blue",
+  main=paste0("Función de distribución\n H(m=",m,", n=",n,", k=",k,")"))
+par(mfrow=c(1,1))
+```
